@@ -79,10 +79,14 @@ if len( sys.argv ) != 3:
 else:
    with create_header_corrected_CSV( sys.argv[1]       ) as agenda_outlook_file,\
         open(                        sys.argv[2], "wt" ) as ics_file:
-      agenda_reader = csv.DictReader( agenda_outlook_file ) # Lecture de l'entête, mise à jour des clefs d'accès aux champs
+      # Lecture de l'entête, mise à jour des clefs d'accès aux champs
+      agenda_reader = csv.DictReader( agenda_outlook_file )
+      # Ecriture de l'entête
       ics_file.write( f"BEGIN:VCALENDAR{CRLF}" )
       ics_file.write( f"VERSION:2.0{CRLF}" )
       ics_file.write( f"PRODID:-//Aubin.org/NONSGML Windows-Outlook export as ics//EN{CRLF}" )
+      # Itération sur chaque entrée
       for row in agenda_reader:
          csv_to_ics( row, ics_file )
+      # Ecriture de la fermeture du fichier ics
       ics_file.write( f"END:VCALENDAR{CRLF}" )
