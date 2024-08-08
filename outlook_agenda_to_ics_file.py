@@ -6,9 +6,6 @@ from io import TextIOWrapper
 from typing import TextIO, Any
 import sys
 #
-CRLF = "\r\n"
-sequence = 1
-#
 def create_header_corrected_CSV( agenda_outlook_csv_path: str ) -> TextIO:
    last_dot = agenda_outlook_csv_path.rfind('.')
    agenda_outlook_csv_header_corrected_path = f"{agenda_outlook_csv_path[0:last_dot]}-header-corrected.csv"
@@ -26,6 +23,7 @@ def create_header_corrected_CSV( agenda_outlook_csv_path: str ) -> TextIO:
       return open( agenda_outlook_csv_header_corrected_path, "rt" )
 #
 def fold( text: str ) -> str:
+   global CRLF
    folded = text[0:75] + CRLF
    text   = text[75:]
    while len( text ) > 0:
@@ -47,6 +45,7 @@ def csv_to_ics( row: dict[str | Any, str | Any], ics_file: TextIOWrapper ) -> No
    debut = datetime.strptime( debut_date + '-' + debut_hour, "%d/%m/%Y-%H:%M:%S" ).strftime( "%Y%m%dT%H%M%S" )
    fin   = datetime.strptime( fin_date   + '-' + fin_hour  , "%d/%m/%Y-%H:%M:%S" ).strftime( "%Y%m%dT%H%M%S" )
    global sequence
+   global CRLF
    ics_file.write( f"BEGIN:VEVENT{CRLF}" )
    ics_file.write( f"UID:{debut}-{sequence:06}@fr.thalesgroup.com{CRLF}" )
    ics_file.write( f"DTSTAMP:{debut}{CRLF}" )
@@ -74,19 +73,24 @@ def csv_to_ics( row: dict[str | Any, str | Any], ics_file: TextIOWrapper ) -> No
    ics_file.write( f"END:VEVENT{CRLF}" )
    sequence += 1
 #
-if len( sys.argv ) != 3:
-   print( f'usage: python3 {sys.argv[0]} <Microsoft Office Outlook agenda export CSV file path> <Thunderbird ICS file path>', file = sys.stderr )
-else:
-   with create_header_corrected_CSV( sys.argv[1]       ) as agenda_outlook_file,\
-        open(                        sys.argv[2], "wt" ) as ics_file:
-      # Lecture de l'entête, mise à jour des clefs d'accès aux champs
-      agenda_reader = csv.DictReader( agenda_outlook_file )
-      # Ecriture de l'entête
-      ics_file.write( f"BEGIN:VCALENDAR{CRLF}" )
-      ics_file.write( f"VERSION:2.0{CRLF}" )
-      ics_file.write( f"PRODID:-//Aubin.org/NONSGML Windows-Outlook export as ics//EN{CRLF}" )
-      # Itération sur chaque entrée
-      for row in agenda_reader:
-         csv_to_ics( row, ics_file )
-      # Ecriture de la fermeture du fichier ics
-      ics_file.write( f"END:VCALENDAR{CRLF}" )
+if __name__ == "__main__":
+   if len( sys.argv ) != 3:
+      print( f'usage: python3 {sys.argv[0]} <Microsoft Office Outlook agenda export CSV file path> <Thunderbird ICS file path>', file = sys.stderr )
+   else:
+      global CRLF
+      CRLF = "\r\n"
+      global sequence
+      sequence = 1
+      with create_header_corrected_CSV( sys.argv[1]       ) as agenda_outlook_file,\
+           open(                        sys.argv[2], "wt" ) as ics_file:
+         # Lecture de l'entête, mise à jour des clefs d'accès aux champs
+         agenda_reader = csv.DictReader( agenda_outlook_file )
+         # Ecriture de l'entête
+         ics_file.write( f"BEGIN:VCALENDAR{CRLF}" )
+         ics_file.write( f"VERSION:2.0{CRLF}" )
+         ics_file.write( f"PRODID:-//Aubin.org/NONSGML Windows-Outlook export as ics//EN{CRLF}" )
+         # Itération sur chaque entrée
+         for row in agenda_reader:
+            csv_to_ics( row, ics_file )
+         # Ecriture de la fermeture du fichier ics
+         ics_file.write( f"END:VCALENDAR{CRLF}" )
